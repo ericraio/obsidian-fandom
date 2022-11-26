@@ -17,6 +17,7 @@ interface FandomExtract {
   title: string;
   text: string;
   url: string;
+  categories: string[];
 }
 
 interface FandomPluginSettings {
@@ -64,9 +65,7 @@ export default class FandomPlugin extends Plugin {
   }
 
   formatExtractText(extract: FandomExtract, searchTerm: string): string {
-    const content = wtf(extract.text);
-    const json: { [categories: string]: any } = content.json();
-    const text: string = content.text();
+    const text: string = extract.text;
     let formattedText: string = "";
 
     if (this.settings.shouldUseParagraphTemplate) {
@@ -86,9 +85,6 @@ export default class FandomPlugin extends Plugin {
     if (this.settings.shouldBoldSearchTerm) {
       const pattern = new RegExp(searchTerm, "i");
       formattedText = formattedText.replace(pattern, `**${searchTerm}**`);
-    }
-    if (this.settings.shouldLinkCategories) {
-            formattedText = formattedText.replace("{{categories}}", json.categories.map((category: any) => `[[${category}]]`).join(", "))
     }
     return formattedText;
   }
@@ -112,28 +108,39 @@ export default class FandomPlugin extends Plugin {
         if (!json) return undefined;
 
 const page = json.query.pages[0]
-
     if (!page)  {
             return undefined;
     }
 
-    const content = page.revisions[0].slots.main.content;
+    const content = wtf(page.revisions[0].slots.main.content);
+    const parse: { [categories: string]: any } = content.json();
 
       return {
         title:page.title,
-        text: content,
+        text: content.text(),
         url: this.getUrl(wiki, page.title),
+        categories: parse.categories,
       };
   }
 
   formatExtractInsert(extract: FandomExtract, searchTerm: string): string {
     const formattedText = this.formatExtractText(extract, searchTerm);
     const template = this.settings.template;
+    const categories = this.formatCategories(extract.categories);
     const formattedTemplate = template
       .replace("{{text}}", formattedText)
       .replace("{{searchTerm}}", searchTerm)
-      .replace("{{url}}", extract.url);
+      .replace("{{url}}", extract.url)
+      .replace("{{categories}}", categories);
     return formattedTemplate;
+  }
+
+  formatCategories(categories: string[]): string {
+    if (this.settings.shouldLinkCategories) {
+            return categories.map((category: any) => `[[${category}]]`).join(", ");
+    } else {
+            return categories.join(", ");
+    }
   }
 
   async getFandomText(title: string): Promise<FandomExtract | undefined> {
