@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-fandom",
+  "name": "Fandom",
+  "version": "1.0.0",
+  "minAppVersion": "0.9.12",
+  "description": "Grabs information from Fandom for a topic and brings it into Obsidian notes",
+  "author": "Eric Raio",
+  "authorUrl": "https://ericraio.com",
+  "isDesktopOnly": false
+}
